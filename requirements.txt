@@ -1,0 +1,10 @@
+youtube-transcript-api>=0.6.0
+requests>=2.25.0
+yt-dlp>=2023.7.6
+whisper>=1.1.10
+openai-whisper>=20231117
+# Note: FFmpeg is also required for audio processing
+# Install FFmpeg: https://ffmpeg.org/download.html
+# Windows: Download from https://ffmpeg.org/download.html#build-windows
+# macOS: brew install ffmpeg
+# Ubuntu/Debian: sudo apt install ffmpeg 
