@@ -30,6 +30,12 @@ try:
     from sklearn.decomposition import PCA
     from sklearn.preprocessing import StandardScaler
     from sklearn.metrics import silhouette_score
+    CLUSTERING_AVAILABLE = True
+except ImportError:
+    CLUSTERING_AVAILABLE = False
+    print("Warning: Clustering libraries not available. Install with: pip install scikit-learn")
+
+try:
     import matplotlib.pyplot as plt
     import seaborn as sns
     import plotly.graph_objects as go
@@ -38,7 +44,7 @@ try:
     VISUALIZATION_AVAILABLE = True
 except ImportError:
     VISUALIZATION_AVAILABLE = False
-    print("Warning: Visualization libraries not available. Install with: pip install scikit-learn matplotlib seaborn plotly")
+    print("Warning: Visualization libraries not available. Install with: pip install matplotlib seaborn plotly")
 
 # Custom imports
 import sys
@@ -225,7 +231,7 @@ class BERTWordClusteringAnalyzer:
         Returns:
             Dictionary with clustering results
         """
-        if not VISUALIZATION_AVAILABLE:
+        if not CLUSTERING_AVAILABLE:
             raise ValueError("Clustering libraries not available")
         
         try:

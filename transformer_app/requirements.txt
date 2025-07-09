@@ -1,29 +1,23 @@
-# Core dependencies for BERT Word Embedding Clustering Analyzer
-flask==2.3.3
-numpy==1.24.3
-pandas==2.0.3
+# Core dependencies
+numpy>=1.24.0
+pandas>=2.0.0
 
-# BERT and transformer libraries
-torch==2.0.1
-transformers==4.33.2
-sentence-transformers==2.2.2
+# BERT and transformers
+torch>=2.0.0
+transformers>=4.30.0
+sentence-transformers>=2.2.0
 
-# Machine learning and clustering
-scikit-learn==1.3.0
-scipy==1.11.1
+# Clustering and machine learning
+scikit-learn>=1.3.0
+scipy>=1.10.0
 
-# Visualization libraries
-matplotlib==3.7.2
-seaborn==0.12.2
-plotly==5.16.1
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
 
-# YouTube transcript extraction
-youtube-transcript-api==0.6.1
+# YouTube transcript
+youtube-transcript-api>=0.6.0
 
-# Text processing
-nltk==3.8.1
-textblob==0.17.1
-
-# Utilities
-requests==2.31.0
-tqdm==4.66.1 
+# Additional utilities
+requests>=2.25.0 
