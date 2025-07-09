@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BERT Word Embedding Clustering Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+        
+        .tab-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .cluster-info {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .cluster-info h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .visualization-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .visualization-container h4 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin-top: 20px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-top: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-card .label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .word-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            border: 1px solid #bbdefb;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BERT Word Embedding Clustering Analyzer</h1>
+            <p>Cluster word embeddings within YouTube transcripts to identify semantic groups and bias patterns</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="youtube">YouTube Video</button>
+                <button class="tab-btn" data-tab="text">Custom Text</button>
+                <button class="tab-btn" data-tab="results">Results</button>
+            </div>
+            
+            <!-- YouTube Video Tab -->
+            <div id="youtube" class="tab-content active">
+                <h2>Analyze YouTube Video Transcript</h2>
+                <p>Enter a YouTube URL to extract the transcript and cluster word embeddings to identify semantic groups and bias patterns.</p>
+                
+                <div class="form-group">
+                    <label for="video-url">YouTube Video URL:</label>
+                    <input type="url" id="video-url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                
+                <div class="form-group">
+                    <label>Clustering Method:</label>
+                    <select id="youtube-method" class="form-control">
+                        <option value="kmeans">K-Means Clustering</option>
+                        <option value="dbscan">DBSCAN Clustering</option>
+                        <option value="agglomerative">Agglomerative Clustering</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Clusters (for K-Means/Agglomerative):</label>
+                    <input type="number" id="youtube-clusters" class="form-control" value="5" min="2" max="15" style="width: 150px;">
+                </div>
+                
+                <div class="form-group">
+                    <label>Minimum Word Length:</label>
+                    <input type="number" id="youtube-min-length" class="form-control" value="3" min="2" max="10" style="width: 150px;">
+                </div>
+                
+                <div id="youtube-dbscan-params" style="display: none;">
+                    <div class="form-group">
+                        <label>Epsilon (eps):</label>
+                        <input type="number" id="youtube-eps" class="form-control" value="0.5" step="0.1" style="width: 150px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum Samples:</label>
+                        <input type="number" id="youtube-min-samples" class="form-control" value="2" min="1" style="width: 150px;">
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="analyzeYouTube()">Analyze YouTube Transcript</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+            </div>
+            
+            <!-- Custom Text Tab -->
+            <div id="text" class="tab-content">
+                <h2>Analyze Custom Text</h2>
+                <p>Enter custom text to cluster word embeddings and identify semantic groups and bias patterns.</p>
+                
+                <div class="form-group">
+                    <label for="custom-text">Text to Analyze:</label>
+                    <textarea id="custom-text" class="form-control" placeholder="Enter the text you want to analyze for word clustering...&#10;&#10;Example:&#10;The government should reduce regulations and allow free market principles to drive economic growth. Lower taxes will stimulate business investment and create jobs for hardworking Americans. We need to strengthen our borders and enforce immigration laws. The rule of law is fundamental to our democracy and national security."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Clustering Method:</label>
+                    <select id="text-method" class="form-control">
+                        <option value="kmeans">K-Means Clustering</option>
+                        <option value="dbscan">DBSCAN Clustering</option>
+                        <option value="agglomerative">Agglomerative Clustering</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Clusters (for K-Means/Agglomerative):</label>
+                    <input type="number" id="text-clusters" class="form-control" value="5" min="2" max="15" style="width: 150px;">
+                </div>
+                
+                <div class="form-group">
+                    <label>Minimum Word Length:</label>
+                    <input type="number" id="text-min-length" class="form-control" value="3" min="2" max="10" style="width: 150px;">
+                </div>
+                
+                <div id="text-dbscan-params" style="display: none;">
+                    <div class="form-group">
+                        <label>Epsilon (eps):</label>
+                        <input type="number" id="text-eps" class="form-control" value="0.5" step="0.1" style="width: 150px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum Samples:</label>
+                        <input type="number" id="text-min-samples" class="form-control" value="2" min="1" style="width: 150px;">
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="analyzeText()">Analyze Custom Text</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+            </div>
+            
+            <!-- Results Tab -->
+            <div id="results" class="tab-content">
+                <div id="loading" class="loading" style="display:none;">
+                    Analyzing word embeddings with BERT... This may take a few minutes.
+                </div>
+                <div id="results-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                button.classList.add('active');
+                document.getElementById(button.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Show/hide DBSCAN parameters
+        document.getElementById('youtube-method').addEventListener('change', function() {
+            document.getElementById('youtube-dbscan-params').style.display = 
+                this.value === 'dbscan' ? 'block' : 'none';
+        });
+        
+        document.getElementById('text-method').addEventListener('change', function() {
+            document.getElementById('text-dbscan-params').style.display = 
+                this.value === 'dbscan' ? 'block' : 'none';
+        });
+        
+        // Utility functions
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results-content').innerHTML = '';
+            document.querySelector('[data-tab="results"]').click();
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results-content').innerHTML = `
+                <div class="error">${message}</div>
+            `;
+        }
+        
+        function showSuccess(message) {
+            document.getElementById('results-content').innerHTML = `
+                <div class="success">${message}</div>
+            `;
+        }
+        
+        // Analysis functions
+        async function analyzeYouTube() {
+            const videoUrl = document.getElementById('video-url').value.trim();
+            const method = document.getElementById('youtube-method').value;
+            const nClusters = parseInt(document.getElementById('youtube-clusters').value);
+            const minWordLength = parseInt(document.getElementById('youtube-min-length').value);
+            
+            if (!videoUrl) {
+                showError('Please enter a YouTube URL.');
+                return;
+            }
+            
+            const params = {
+                video_url: videoUrl,
+                method: method,
+                n_clusters: nClusters,
+                min_word_length: minWordLength
+            };
+            
+            if (method === 'dbscan') {
+                params.eps = parseFloat(document.getElementById('youtube-eps').value);
+                params.min_samples = parseInt(document.getElementById('youtube-min-samples').value);
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/analyze_youtube', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    renderResults(data.results, 'YouTube Video');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            }
+        }
+        
+        async function analyzeText() {
+            const text = document.getElementById('custom-text').value.trim();
+            const method = document.getElementById('text-method').value;
+            const nClusters = parseInt(document.getElementById('text-clusters').value);
+            const minWordLength = parseInt(document.getElementById('text-min-length').value);
+            
+            if (!text || text.length < 50) {
+                showError('Please enter text with at least 50 characters.');
+                return;
+            }
+            
+            const params = {
+                text: text,
+                method: method,
+                n_clusters: nClusters,
+                min_word_length: minWordLength
+            };
+            
+            if (method === 'dbscan') {
+                params.eps = parseFloat(document.getElementById('text-eps').value);
+                params.min_samples = parseInt(document.getElementById('text-min-samples').value);
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/analyze_text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    renderResults(data.results, 'Custom Text');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            }
+        }
+        
+        function renderResults(results, sourceType) {
+            document.getElementById('loading').style.display = 'none';
+            
+            let html = `
+                <div class="result-section">
+                    <h3>Word Clustering Results - ${sourceType}</h3>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="value">${results.embedding_results.embedded_words}</div>
+                            <div class="label">Words Analyzed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${results.cluster_results.n_clusters}</div>
+                            <div class="label">Word Clusters</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${results.cluster_results.method}</div>
+                            <div class="label">Clustering Method</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${results.silhouette_score ? results.silhouette_score.toFixed(3) : 'N/A'}</div>
+                            <div class="label">Silhouette Score</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Video info if available
+            if (results.video_info) {
+                html += `
+                    <div class="result-section">
+                        <h3>Video Information</h3>
+                        <p><strong>Title:</strong> ${results.video_info.title}</p>
+                        <p><strong>URL:</strong> <a href="${results.video_info.url}" target="_blank">${results.video_info.url}</a></p>
+                        <p><strong>Transcript Length:</strong> ${results.video_info.transcript_length} characters</p>
+                    </div>
+                `;
+            }
+            
+            // Word cluster analysis
+            if (results.cluster_analysis) {
+                html += '<div class="result-section"><h3>Word Cluster Analysis</h3>';
+                
+                Object.entries(results.cluster_analysis).forEach(([clusterName, clusterData]) => {
+                    html += `
+                        <div class="cluster-info">
+                            <h4>${clusterName}</h4>
+                            <p><strong>Size:</strong> ${clusterData.size} words</p>
+                            <p><strong>Average Word Length:</strong> ${Math.round(clusterData.avg_length)} characters</p>
+                            <p><strong>Political Terms:</strong> ${clusterData.political_terms.join(', ') || 'None'}</p>
+                            <p><strong>Bias Indicators:</strong> Loaded Language: ${clusterData.bias_indicators.loaded_language}, 
+                               Emotional Words: ${clusterData.bias_indicators.emotional_words}, 
+                               Subjective Terms: ${clusterData.bias_indicators.subjective_terms}</p>
+                            
+                            <p><strong>Words in Cluster:</strong></p>
+                            <div class="word-list">
+                                ${clusterData.words.map(word => `<span class="word-tag">${word}</span>`).join('')}
+                            </div>
+                            
+                            <details style="margin-top: 15px;">
+                                <summary>Semantic Groups</summary>
+                                ${Object.entries(clusterData.semantic_groups).map(([group, words]) => 
+                                    `<p><strong>${group}:</strong> ${words.join(', ')}</p>`
+                                ).join('')}
+                            </details>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Visualizations
+            if (results.visualizations && !results.visualizations.error) {
+                html += '<div class="result-section"><h3>Visualizations</h3>';
+                
+                if (results.visualizations.word_scatter) {
+                    html += `
+                        <div class="visualization-container">
+                            <h4>Word Embedding Clusters</h4>
+                            ${results.visualizations.word_scatter}
+                        </div>
+                    `;
+                }
+                
+                if (results.visualizations.cluster_summary) {
+                    html += `
+                        <div class="visualization-container">
+                            <h4>Cluster Summary Dashboard</h4>
+                            ${results.visualizations.cluster_summary}
+                        </div>
+                    `;
+                }
+                
+                if (results.visualizations.word_frequency) {
+                    html += `
+                        <div class="visualization-container">
+                            <h4>Word Frequency Analysis</h4>
+                            ${results.visualizations.word_frequency}
+                        </div>
+                    `;
+                }
+                
+                if (results.visualizations.semantic_analysis) {
+                    html += `
+                        <div class="visualization-container">
+                            <h4>Semantic Group Distribution</h4>
+                            ${results.visualizations.semantic_analysis}
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            }
+            
+            // Actions
+            html += `
+                <div class="result-section">
+                    <button class="btn" onclick="downloadResults()">Download Results</button>
+                    <button class="btn btn-secondary" onclick="resetForm()">New Analysis</button>
+                </div>
+            `;
+            
+            document.getElementById('results-content').innerHTML = html;
+            
+            // Store results for download
+            window.lastResults = results;
+        }
+        
+        async function downloadResults() {
+            if (!window.lastResults) {
+                showError('No results to download');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/download_results', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ results: window.lastResults })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `bert_word_clustering_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    const data = await response.json();
+                    showError(data.error || 'Download failed');
+                }
+            } catch (e) {
+                showError('Download error: ' + e.message);
+            }
+        }
+        
+        function resetForm() {
+            // Reset YouTube form
+            document.getElementById('video-url').value = '';
+            document.getElementById('youtube-clusters').value = '5';
+            document.getElementById('youtube-min-length').value = '3';
+            document.getElementById('youtube-eps').value = '0.5';
+            document.getElementById('youtube-min-samples').value = '2';
+            
+            // Reset text form
+            document.getElementById('custom-text').value = '';
+            document.getElementById('text-clusters').value = '5';
+            document.getElementById('text-min-length').value = '3';
+            document.getElementById('text-eps').value = '0.5';
+            document.getElementById('text-min-samples').value = '2';
+            
+            // Clear results
+            document.getElementById('results-content').innerHTML = '';
+            document.getElementById('loading').style.display = 'none';
+            
+            // Switch to first tab
+            document.querySelector('[data-tab="youtube"]').click();
+        }
+    </script>
+</body>
+</html> 
