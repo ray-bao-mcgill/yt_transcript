@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI Political Bias Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+        
+        .tab-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .bias-score {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .bias-score .score {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .bias-score .label {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .bias-score .confidence {
+            font-size: 1rem;
+            color: #28a745;
+        }
+        
+        .bias-left {
+            color: #dc3545;
+        }
+        
+        .bias-right {
+            color: #007bff;
+        }
+        
+        .bias-center {
+            color: #6c757d;
+        }
+        
+        .bias-neutral {
+            color: #28a745;
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .analysis-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .analysis-card h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .list-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin-top: 20px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-top: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-card .label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>OpenAI Political Bias Analyzer</h1>
+            <p>Analyze political bias in YouTube transcripts using OpenAI's advanced language models</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="youtube">YouTube Video</button>
+                <button class="tab-btn" data-tab="text">Custom Text</button>
+                <button class="tab-btn" data-tab="results">Results</button>
+            </div>
+            
+            <!-- YouTube Video Tab -->
+            <div id="youtube" class="tab-content active">
+                <h2>Analyze YouTube Video</h2>
+                <p>Enter a YouTube URL to extract the transcript and analyze political bias using OpenAI.</p>
+                
+                <div class="form-group">
+                    <label for="video-url">YouTube Video URL:</label>
+                    <input type="url" id="video-url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                
+                <button class="btn" onclick="analyzeYouTube()">Analyze YouTube Video</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+            </div>
+            
+            <!-- Custom Text Tab -->
+            <div id="text" class="tab-content">
+                <h2>Analyze Custom Text</h2>
+                <p>Enter custom text to analyze political bias using OpenAI.</p>
+                
+                <div class="form-group">
+                    <label for="text-title">Title (optional):</label>
+                    <input type="text" id="text-title" class="form-control" placeholder="Enter a title for your text...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="custom-text">Text to Analyze:</label>
+                    <textarea id="custom-text" class="form-control" placeholder="Enter the text you want to analyze for political bias...&#10;&#10;Example:&#10;The government should reduce regulations and allow free market principles to drive economic growth. Lower taxes will stimulate business investment and create jobs for hardworking Americans. We need to strengthen our borders and enforce immigration laws. The rule of law is fundamental to our democracy and national security."></textarea>
+                </div>
+                
+                <button class="btn" onclick="analyzeText()">Analyze Custom Text</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+            </div>
+            
+            <!-- Results Tab -->
+            <div id="results" class="tab-content">
+                <div id="loading" class="loading" style="display:none;">
+                    Analyzing political bias with OpenAI... This may take a few moments.
+                </div>
+                <div id="results-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                button.classList.add('active');
+                document.getElementById(button.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Utility functions
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results-content').innerHTML = '';
+            document.querySelector('[data-tab="results"]').click();
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results-content').innerHTML = `
+                <div class="error">${message}</div>
+            `;
+        }
+        
+        function showSuccess(message) {
+            document.getElementById('results-content').innerHTML = `
+                <div class="success">${message}</div>
+            `;
+        }
+        
+        // Analysis functions
+        async function analyzeYouTube() {
+            const videoUrl = document.getElementById('video-url').value.trim();
+            
+            if (!videoUrl) {
+                showError('Please enter a YouTube URL.');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/analyze_youtube', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_url: videoUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    renderResults(data.results, 'YouTube Video');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            }
+        }
+        
+        async function analyzeText() {
+            const text = document.getElementById('custom-text').value.trim();
+            const title = document.getElementById('text-title').value.trim() || 'Custom Text';
+            
+            if (!text || text.length < 50) {
+                showError('Please enter text with at least 50 characters.');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/analyze_text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, title: title })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    renderResults(data.results, 'Custom Text');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            }
+        }
+        
+        function renderResults(results, sourceType) {
+            document.getElementById('loading').style.display = 'none';
+            
+            const analysis = results.analysis;
+            if (!analysis || typeof analysis !== 'object') {
+                showError('Invalid analysis results received.');
+                return;
+            }
+            
+            let html = `
+                <div class="result-section">
+                    <h3>Political Bias Analysis - ${sourceType}</h3>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="value">${results.transcript_length}</div>
+                            <div class="label">Characters</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${analysis.overall_bias || 'N/A'}</div>
+                            <div class="label">Overall Bias</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${analysis.bias_confidence || 'N/A'}</div>
+                            <div class="label">Confidence</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value">${analysis.bias_score || 'N/A'}</div>
+                            <div class="label">Bias Score</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Bias score visualization
+            if (analysis.bias_score !== undefined && analysis.bias_score !== null) {
+                const score = analysis.bias_score;
+                let biasClass = 'bias-center';
+                let biasLabel = 'Center';
+                
+                if (score < -30) {
+                    biasClass = 'bias-left';
+                    biasLabel = 'Left';
+                } else if (score > 30) {
+                    biasClass = 'bias-right';
+                    biasLabel = 'Right';
+                } else if (Math.abs(score) < 10) {
+                    biasClass = 'bias-neutral';
+                    biasLabel = 'Neutral';
+                }
+                
+                html += `
+                    <div class="bias-score">
+                        <div class="score ${biasClass}">${score}</div>
+                        <div class="label">${biasLabel} Bias</div>
+                        <div class="confidence">Confidence: ${analysis.bias_confidence || 'N/A'}</div>
+                    </div>
+                `;
+            }
+            
+            // Analysis details
+            html += '<div class="analysis-grid">';
+            
+            if (analysis.key_indicators && analysis.key_indicators.length > 0) {
+                html += `
+                    <div class="analysis-card">
+                        <h4>Key Bias Indicators</h4>
+                        ${analysis.key_indicators.map(indicator => 
+                            `<div class="list-item">${indicator}</div>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+            
+            if (analysis.political_topics && analysis.political_topics.length > 0) {
+                html += `
+                    <div class="analysis-card">
+                        <h4>Political Topics</h4>
+                        ${analysis.political_topics.map(topic => 
+                            `<div class="list-item">${topic}</div>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+            
+            if (analysis.loaded_language && analysis.loaded_language.length > 0) {
+                html += `
+                    <div class="analysis-card">
+                        <h4>Loaded Language</h4>
+                        ${analysis.loaded_language.map(language => 
+                            `<div class="list-item">${language}</div>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+            
+            if (analysis.recommendations && analysis.recommendations.length > 0) {
+                html += `
+                    <div class="analysis-card">
+                        <h4>Recommendations</h4>
+                        ${analysis.recommendations.map(rec => 
+                            `<div class="list-item">${rec}</div>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Summary
+            if (analysis.summary) {
+                html += `
+                    <div class="result-section">
+                        <h3>Analysis Summary</h3>
+                        <p>${analysis.summary}</p>
+                    </div>
+                `;
+            }
+            
+            // Framing analysis
+            if (analysis.framing_analysis) {
+                html += `
+                    <div class="result-section">
+                        <h3>Framing Analysis</h3>
+                        <p>${analysis.framing_analysis}</p>
+                    </div>
+                `;
+            }
+            
+            // Source credibility
+            if (analysis.source_credibility) {
+                html += `
+                    <div class="result-section">
+                        <h3>Source Credibility</h3>
+                        <p><strong>Rating:</strong> ${analysis.source_credibility}</p>
+                    </div>
+                `;
+            }
+            
+            // Actions
+            html += `
+                <div class="result-section">
+                    <button class="btn" onclick="downloadResults()">Download Results</button>
+                    <button class="btn btn-secondary" onclick="resetForm()">New Analysis</button>
+                </div>
+            `;
+            
+            document.getElementById('results-content').innerHTML = html;
+            
+            // Store results for download
+            window.lastResults = results;
+        }
+        
+        async function downloadResults() {
+            if (!window.lastResults) {
+                showError('No results to download');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/download_results', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ results: window.lastResults })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `openai_bias_analysis_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    const data = await response.json();
+                    showError(data.error || 'Download failed');
+                }
+            } catch (e) {
+                showError('Download error: ' + e.message);
+            }
+        }
+        
+        function resetForm() {
+            // Reset YouTube form
+            document.getElementById('video-url').value = '';
+            
+            // Reset text form
+            document.getElementById('custom-text').value = '';
+            document.getElementById('text-title').value = '';
+            
+            // Clear results
+            document.getElementById('results-content').innerHTML = '';
+            document.getElementById('loading').style.display = 'none';
+            
+            // Switch to first tab
+            document.querySelector('[data-tab="youtube"]').click();
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,9 @@
+# Core dependencies for OpenAI Political Bias Analyzer
+flask==2.3.3
+requests==2.31.0
+
+# YouTube transcript extraction
+youtube-transcript-api==0.6.1
+
+# Utilities
+python-dotenv==1.0.0 
